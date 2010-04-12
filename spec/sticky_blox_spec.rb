@@ -50,24 +50,45 @@ end
 
 describe "Overriding stuck methods" do
   before :all do
-    @original = Spearmint.chew
+    @original = Spearmint.chew.dup
     Spearmint.class_eval do
-      stick :chew do
+      stick :chew, true do
         self.upcase
       end
     end
   end
   
   after :all do
-    Spearmint.class_eval do
-      stick :chew, &@original
-    end
+    Spearmint.chew.clear
+    @original.each {|e| Spearmint.chew << e}
   end
 
   it "should override the previously stuck method" do
     Spearmint.stick_to String
     s = 'a string'
     s.chew.should == 'A STRING'
+  end
+end
+
+describe "Composing behavior" do
+  before :all do
+    @original = Spearmint.chew.dup
+    Spearmint.class_eval do
+      stick :chew do
+        self.gsub(/[a,e,i,o,u]/, '')
+      end
+    end
+  end
+  
+  after :all do
+    Spearmint.chew.clear
+    @original.each {|e| Spearmint.chew << e}
+  end
+
+  it "should add to the previously defined behavior" do
+    Spearmint.stick_to String
+    s = 'a string'
+    s.chew.should == 'gnrts '
   end
 end
 
@@ -85,25 +106,44 @@ describe "Undefining stuck methods" do
     s = ''
     s.should respond_to(:chew)
     s.should respond_to(:chew_it_up_and_spit_it_out)
+    s.should respond_to(:open)
+    validate_sticks_of_spearmint
 
     Spearmint.unstick_from String => [:chew], :ignore_errors => false
     s.should_not respond_to(:chew)
     s.should respond_to(:chew_it_up_and_spit_it_out)
+    validate_sticks_of_spearmint
 
     Spearmint.unstick_from String => [:chew_it_up_and_spit_it_out], :ignore_errors => false
     s.should_not respond_to(:chew_it_up_and_spit_it_out)
+    validate_sticks_of_spearmint
+    
+    Spearmint.unstick_from String => [:open], :ignore_errors => false
+    s.should_not respond_to(:open)
+    validate_sticks_of_spearmint
   end
   
   it 'should be able to undefine all stuck methods' do
     Spearmint.stick_to String
-    s = ''
+    s = 'jason'
     s.should respond_to(:chew)
     s.should respond_to(:chew_it_up_and_spit_it_out)
     s.should respond_to(:open)
+    s.chew.should == 'nosaj'
+    
+    validate_sticks_of_spearmint
 
     Spearmint.unstick_all_from String, false
     s.should_not respond_to(:chew)
     s.should_not respond_to(:chew_it_up_and_spit_it_out)
     s.should_not respond_to(:open)
+
+    validate_sticks_of_spearmint
+  end
+  
+  def validate_sticks_of_spearmint
+    Spearmint.chew.should_not be_empty
+    Spearmint.chew_it_up_and_spit_it_out.should_not be_empty
+    Spearmint.open.should_not be_empty
   end
 end

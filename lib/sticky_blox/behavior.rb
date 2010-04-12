@@ -4,10 +4,33 @@ module StickyBlox
   def self.included(base)
     base.extend ClassMethods
   end
+  
+  class BindingArray < Array
+    
+    def bind(object)
+      @binding = object
+      self
+    end
+    
+    def call(*args)
+      value = @binding
+      self.reject{|e| e.nil?}.each do |blk|
+        value = blk.bind(value).call(*args)
+      end
+      value
+    end
+  end
 
   module ClassMethods
     def my_meta_class
       class << self; self; end
+    end
+    
+    def stuck_methods
+      my_meta_class.instance_eval do
+        @stuck_methods ||= {}
+        @stuck_methods
+      end
     end
 
     # Defines methods on the class identified by "binding"
@@ -17,10 +40,10 @@ module StickyBlox
     def stick_to( binding )
       my_meta_class.instance_eval do
         clz = self
-        @stuck_methods.each do |method_name|
+        @stuck_methods.each_pair do |method_name, binding_array|
           binding.class_eval do
             define_method method_name do | *args |
-              clz.send(method_name).bind(self).call(*args)
+              binding_array.bind(self).call(*args)
             end
           end
         end
@@ -48,27 +71,20 @@ module StickyBlox
     end
     
     def unstick_all_from( binding, ignore_errors=true )
-      unstick_from( binding => my_meta_class.instance_variable_get("@stuck_methods"), :ignore_errors => ignore_errors )
+      unstick_from( binding => my_meta_class.instance_variable_get("@stuck_methods").keys, :ignore_errors => ignore_errors )
     end
 
-    def stick name, &block
-      my_meta_class.instance_eval do
-        @stuck_methods ||= [] #{}
-        @stuck_methods << name unless @stuck_methods.include?(name) #[name] = block unless @stuck_methods.has_key?(name)
+    def stick(name, replace=false, &block)
+      my_methods = stuck_methods
+      if replace && my_methods.has_key?(name)
+        my_methods.delete(name)
       end
-      
-      clz = self.class
-      clz.class_eval do
-        # define_method "#{name}=" do |arg|
-        #   my_meta_class.instance_variable_get("@stuck_methods")[name] = block
-        # end
+      (my_methods[name] ||= BindingArray.new) << block
 
-        # def method_missing(meth, *args, &blk)
-        #   raise "#{clz} doesn't respond to #{meth}"
-        #   my_meta_class.instance_variable_get("@stuck_methods")[meth]
-        # end
+      my_methods = my_methods[name]
+      self.class.class_eval do
         define_method name do
-          block
+          my_methods
         end
       end
     end
