@@ -48,20 +48,28 @@ describe "Class-based approaches" do
   end
 end
 
-# describe "Overriding stuck methods" do
-#   class NewSpearmint
-#     include StickyBlox
-#     stick :chew do
-#       self.upcase
-#     end
-#   end
-#   
-#   it "should override the previously stuck method" do
-#     NewSpearmint.stick_to String
-#     s = 'a string'
-#     s.chew.should == 'GNIRTS A'
-#   end
-# end
+describe "Overriding stuck methods" do
+  before :all do
+    @original = Spearmint.chew
+    Spearmint.class_eval do
+      stick :chew do
+        self.upcase
+      end
+    end
+  end
+  
+  after :all do
+    Spearmint.class_eval do
+      stick :chew, &@original
+    end
+  end
+
+  it "should override the previously stuck method" do
+    Spearmint.stick_to String
+    s = 'a string'
+    s.chew.should == 'A STRING'
+  end
+end
 
 describe "Undefining stuck methods" do
   it "should not throw an error if we try do unstick something that's never been stuck" do

@@ -10,6 +10,10 @@ module StickyBlox
       class << self; self; end
     end
 
+    # Defines methods on the class identified by "binding"
+    # for each method in @stuck_methods that will call
+    # the block associated with that method name, passing
+    # any arguments that are defined at runtime
     def stick_to( binding )
       my_meta_class.instance_eval do
         clz = self
@@ -49,10 +53,20 @@ module StickyBlox
 
     def stick name, &block
       my_meta_class.instance_eval do
-        @stuck_methods ||= []
-        @stuck_methods << name unless @stuck_methods.include?(name)
+        @stuck_methods ||= [] #{}
+        @stuck_methods << name unless @stuck_methods.include?(name) #[name] = block unless @stuck_methods.has_key?(name)
       end
-      self.class.class_eval do
+      
+      clz = self.class
+      clz.class_eval do
+        # define_method "#{name}=" do |arg|
+        #   my_meta_class.instance_variable_get("@stuck_methods")[name] = block
+        # end
+
+        # def method_missing(meth, *args, &blk)
+        #   raise "#{clz} doesn't respond to #{meth}"
+        #   my_meta_class.instance_variable_get("@stuck_methods")[meth]
+        # end
         define_method name do
           block
         end
