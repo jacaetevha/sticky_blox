@@ -1,17 +1,6 @@
-# Example: define a reloader for your route implementations
-#   class ReloadableRoutes
-#     include StickyBlox
-#     stick :reload do
-#       raise "no file specified" unless params[:file]
-#       load params[:file]
-#       "Success"
-#     end
-#   end
-#
-#  ReloadableRoutes.stick_to Sinatra::Application
+require File.join( File.dirname(__FILE__), 'proc_extension' )
 
 module StickyBlox
-  
   def self.included(base)
     base.extend ClassMethods
   end

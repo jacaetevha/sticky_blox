@@ -1,0 +1,91 @@
+h2. What is StickyBlox?
+
+StickyBlox is a late binding traits-approach to Ruby meta-programming. It allows you to define
+functionality within a class or object and apply that functionality to instances of other objects
+without having to know anything about how those other objects are created.
+
+h2. Why?
+
+If you're thinking to yourself, "I could just open a class and directly add the methods I want, and
+get the same behavior, or I could create a module and extend or include it where ever I want..." you
+would be right. So, why use StickyBlox? It's really a matter of taste. Sometimes, I don't like opening
+other classes to add my application specific behavior, and I would rather have somewhere else in which
+to encapsulate that behavior. I would also like to be able to reuse that behavior with any object
+without having to add the methods to every class in the system. StickyBlox allows you have the behavior
+shoe-horned into classes such that the functionalities (sticks) become instance methods or just have
+the stick available to be bound to anything, at anytime.
+
+h2. Example
+
+With the later releases of Sinatra, your code is not reload-able in development. You either have to
+restart your server (which can be very burndensome, especially if you have a long start up time) or
+you have to run your application through some Shotgun or something similar.
+
+Here we define a reloader for your route implementations. With this you can pull the logic or your
+routes out to well-defined components and then reload those components at run-time to get new behavior.
+
+h3. app.rb
+
+<pre><code>
+require 'reloading'
+
+ReloadableRoutes.stick_to Sinatra::Application
+
+get "/reload/:file/?" do
+  reload
+end
+
+get "/touch_current_user/?" do
+  touch_current_user
+end
+
+put "/run_as_someone_else/?" do
+  # is the current user allowed to masquerade?
+  current_user = session[:current_user]
+  raise "unauthorized" unless current_user.allowed_to_masquerade_as_someone_else?
+
+  # let's track the fact that our current user is masquerading
+  touch_current_user
+  
+  # do some other marvelous stuff, but let's not argue about the use-cases of such a route
+  
+  # finally let's reset the application state for the current user
+  session[:current_user] = current_user
+end
+
+['table1', 'table2'].each do |table_name|
+  get table_name do
+    load_records_for(table_name)
+  end
+end
+</code></pre>
+
+h3. reloading.rb
+
+<pre><code>
+require 'sticky_blox'
+
+class ReloadableRoutes
+  include StickyBlox
+  
+  stick :reload do
+    # params comes from the instance of the Sinatra application into
+    # which this stick is bound
+    raise "no file specified" unless params[:file]
+    load params[:file]
+    "Success"
+  end
+  
+  stick :touch_current_user do
+    # use the instance variables typically available to an instance of a
+    # Sinatra::Application, or subclass, to update some aspect of the system
+    session[:current_user].touch
+  end
+
+  stick :load_records_for {|some_table_name|
+    # again, params comes from the instance of the Sinatra application
+    # into which this stick is bound
+    model_for(some_table_name).filter(params[some_table_name]).all
+  }
+end
+</code></pre>
