@@ -22,6 +22,7 @@ describe "Instance-based approaches" do
   end
   
   it "should turn the String into an Integer and return an array of numbers" do
+    Spearmint.stick_to String
     thing = "2"
     thing.open.should == [1, 2]
     thing.open(5).should == [1, 2, 3, 4, 5]
@@ -44,5 +45,57 @@ describe "Class-based approaches" do
   it "should throw an error when binding to something other than a String" do
     thing = Object.new
     proc {Spearmint.chew.bind(thing).call}.should raise_error
+  end
+end
+
+# describe "Overriding stuck methods" do
+#   class NewSpearmint
+#     include StickyBlox
+#     stick :chew do
+#       self.upcase
+#     end
+#   end
+#   
+#   it "should override the previously stuck method" do
+#     NewSpearmint.stick_to String
+#     s = 'a string'
+#     s.chew.should == 'GNIRTS A'
+#   end
+# end
+
+describe "Undefining stuck methods" do
+  it "should not throw an error if we try do unstick something that's never been stuck" do
+    Spearmint.stick_to String
+    s = ''
+    s.should_not respond_to(:bogus_method_name)
+    Spearmint.unstick_from String => [:bogus_method_name], :ignore_errors => false
+    s.should_not respond_to(:bogus_method_name)
+  end
+  
+  it 'should be able to undefine methods that have been stuck to a class' do
+    Spearmint.stick_to String
+    s = ''
+    s.should respond_to(:chew)
+    s.should respond_to(:chew_it_up_and_spit_it_out)
+
+    Spearmint.unstick_from String => [:chew], :ignore_errors => false
+    s.should_not respond_to(:chew)
+    s.should respond_to(:chew_it_up_and_spit_it_out)
+
+    Spearmint.unstick_from String => [:chew_it_up_and_spit_it_out], :ignore_errors => false
+    s.should_not respond_to(:chew_it_up_and_spit_it_out)
+  end
+  
+  it 'should be able to undefine all stuck methods' do
+    Spearmint.stick_to String
+    s = ''
+    s.should respond_to(:chew)
+    s.should respond_to(:chew_it_up_and_spit_it_out)
+    s.should respond_to(:open)
+
+    Spearmint.unstick_all_from String, false
+    s.should_not respond_to(:chew)
+    s.should_not respond_to(:chew_it_up_and_spit_it_out)
+    s.should_not respond_to(:open)
   end
 end
