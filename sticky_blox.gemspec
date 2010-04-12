@@ -15,12 +15,14 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = [
     "LICENSE",
      "README.rdoc",
-     "README.textile"
+     "README.textile",
+     "TODO"
   ]
   s.files = [
     "LICENSE",
      "README.rdoc",
      "README.textile",
+     "TODO",
      "VERSION",
      "lib/sticky_blox.rb",
      "lib/sticky_blox/behavior.rb",
