@@ -15,6 +15,12 @@ without having to add the methods to every class in the system. StickyBlox allow
 shoe-horned into classes such that the functionalities (sticks) become instance methods or just have
 the stick available to be bound to anything, at anytime.
 
+h2. Installing
+
+What else?
+
+<pre><code>[sudo] gem install sticky_blox</code></pre>
+
 h2. Example
 
 With the later releases of Sinatra, your code is not reload-able in development. You either have to
