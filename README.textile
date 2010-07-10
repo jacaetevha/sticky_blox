@@ -21,6 +21,15 @@ What else?
 
 <pre><code>[sudo] gem install sticky_blox</code></pre>
 
+h2. Testing
+
+The only dependency this library has is on RSpec during development and testing. To run tests
+<pre><code>
+bundle check
+bundle install # if dependencies are not satisfied
+rake
+</code></pre>
+
 h2. Example
 
 With the later releases of Sinatra, your code is not reload-able in development. You either have to
